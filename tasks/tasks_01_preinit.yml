@@ -1,0 +1,97 @@
+---
+# =============================================================================
+#   Список задач: обработка переменных и проверка версии
+# =============================================================================
+- name: "PREINIT | BLOCK: resolve version and architecture"
+  ignore_errors: "{{ ansible_check_mode }}"
+  tags:
+    - preinit
+    - config
+    - rustdesk_server
+    - rustdesk_server_preinit
+    - rustdesk_server_config
+  block:
+
+    - name: "PREINIT | SET_FACT: map architecture to archive suffix"
+      ansible.builtin.set_fact:
+        _rustdesk_server_arch: "{{ rustdesk_server_arch_map[ansible_architecture] | default(ansible_architecture) }}"
+
+    - name: "PREINIT | ASSERT: architecture is supported"
+      ansible.builtin.assert:
+        that:
+          - _rustdesk_server_arch in rustdesk_server_arch_map.values()
+        fail_msg: >-
+          Architecture '{{ ansible_architecture }}' is not supported.
+          Supported architectures: {{ rustdesk_server_arch_map.values() | list }}
+
+    - name: "PREINIT | URI: fetch latest release from GitHub API"
+      ansible.builtin.uri:
+        url: "{{ rustdesk_server_github_api_latest }}"
+        method: GET
+        return_content: true
+        status_code: 200
+        headers:
+          Accept: "application/vnd.github+json"
+      register: _rustdesk_server_latest_release
+      when: rustdesk_server_role_update_enable | bool
+
+    - name: "PREINIT | SET_FACT: target version"
+      ansible.builtin.set_fact:
+        _rustdesk_server_version: >-
+          {{
+          (_rustdesk_server_latest_release.json.tag_name | default(''))
+          if rustdesk_server_role_update_enable | bool
+          else rustdesk_server_version
+          }}
+
+    - name: "PREINIT | ASSERT: version is defined"
+      ansible.builtin.assert:
+        that:
+          - _rustdesk_server_version | length > 0
+        fail_msg: >-
+          Could not determine RustDesk Server version.
+          Check rustdesk_server_version or GitHub API availability (rustdesk_server_role_update_enable).
+
+    - name: "PREINIT | SET_FACT: download URL"
+      ansible.builtin.set_fact:
+        _rustdesk_server_download_url: >-
+          {{ rustdesk_server_download_base }}/{{ _rustdesk_server_version }}/rustdesk-server-linux-{{ _rustdesk_server_arch }}.zip
+
+    - name: "PREINIT | SLURP: read installed version marker"
+      ansible.builtin.slurp:
+        src: "{{ rustdesk_server_version_file }}"
+      register: _rustdesk_server_installed_slurp
+      failed_when: false
+
+    - name: "PREINIT | SET_FACT: installed version"
+      ansible.builtin.set_fact:
+        _rustdesk_server_installed_version: >-
+          {{
+          (_rustdesk_server_installed_slurp.content | default('') | b64decode | trim)
+          if _rustdesk_server_installed_slurp.content is defined and _rustdesk_server_installed_slurp.content | length > 0
+          else ''
+          }}
+
+    - name: "PREINIT | STAT: check binaries presence"
+      ansible.builtin.stat:
+        path: "{{ rustdesk_server_install_dir }}/{{ item }}"
+      loop: "{{ rustdesk_server_binaries }}"
+      register: _rustdesk_server_binaries_stat
+
+    - name: "PREINIT | SET_FACT: install needed flag"
+      ansible.builtin.set_fact:
+        _rustdesk_server_need_install: >-
+          {{
+          _rustdesk_server_installed_version != _rustdesk_server_version
+          or (_rustdesk_server_binaries_stat.results | map(attribute='stat.exists') | select('equalto', false) | list | length) > 0
+          }}
+
+    - name: "PREINIT | DEBUG: resolved parameters"
+      ansible.builtin.debug:
+        msg:
+          - "Architecture:        {{ _rustdesk_server_arch }}"
+          - "Target version:      {{ _rustdesk_server_version }}"
+          - "Installed version:   {{ _rustdesk_server_installed_version }}"
+          - "Download URL:        {{ _rustdesk_server_download_url }}"
+          - "Install needed:      {{ _rustdesk_server_need_install }}"
+      when: rustdesk_server_role_debug_enable | bool

@@ -1,0 +1,111 @@
+---
+argument_specs:
+  main:
+    short_description: "Установка и настройка RustDesk Server (hbbs + hbbr)"
+    description:
+      - "Роль устанавливает серверную часть RustDesk из официальных релизов GitHub: rendezvous/ID сервер hbbs и relay-сервер hbbr."
+      - "Роль полностью самостоятельна: открывает порты в UFW, создает systemd-юниты, выводит параметры подключения для клиентов."
+      - "Поддерживает зафиксированную версию (по умолчанию) и бесшовное обновление до последней версии с GitHub API."
+
+    options:
+
+      rustdesk_server_role_enable:
+        description: "Использование роли. True: переменные будут переданы в общий скоуп ролей и будут обработаны все задачи. False: переменные будут переданы в общий скоуп ролей, а задачи обработаны не будут"
+        required: true
+        type: bool
+
+      rustdesk_server_role_update_enable:
+        description: "Обновление сервера. True: будет использована последняя стабильная версия с GitHub API и сервер будет обновлен до нее. False: будет использована версия из rustdesk_server_version"
+        default: false
+        required: false
+        type: bool
+
+      rustdesk_server_role_debug_enable:
+        description: "Отображение отладочной информации в stdout"
+        default: false
+        required: false
+        type: bool
+
+      rustdesk_server_role_hosts:
+        description: "Список хостов, на которых будет выполнена роль"
+        default: "{{ ansible_play_hosts }}"
+        required: false
+        type: list
+
+      rustdesk_server_enable:
+        description: "Установка или удаление сервиса. True: сервис будет установлен и настроен. False: сервис будет удален"
+        default: true
+        required: false
+        type: bool
+
+      rustdesk_server_version:
+        description: "Версия RustDesk Server, которая будет установлена при rustdesk_server_role_update_enable: false"
+        default: "1.1.16"
+        required: false
+        type: str
+
+      rustdesk_server_public_host:
+        description: "Публичный IP-адрес или DNS-имя сервера (hbbs), которое клиенты будут использовать для подключения"
+        default: "{{ ansible_host }}"
+        required: false
+        type: str
+
+      rustdesk_server_relay_host:
+        description: "Публичный IP-адрес или DNS-имя relay-сервера (hbbr). По умолчанию совпадает с rustdesk_server_public_host"
+        default: "{{ rustdesk_server_public_host }}"
+        required: false
+        type: str
+
+      rustdesk_server_key:
+        description: "Предзаданный ключ сервера (base64 публичный ключ). Если пусто - сервер сгенерирует ключи сам при первом запуске"
+        default: ""
+        required: false
+        type: str
+
+      rustdesk_server_user:
+        description: "Системный пользователь, от имени которого запускаются сервисы hbbs и hbbr"
+        default: "rustdesk"
+        required: false
+        type: str
+
+      rustdesk_server_firewall_enable:
+        description: "Управление межсетевым экраном. True: роль добавит правила UFW для портов RustDesk. False: правила не изменяются"
+        default: true
+        required: false
+        type: bool
+
+      rustdesk_server_web_client_enable:
+        description: "Веб-клиент. True: будут открыты порты веб-клиента (21118/21119 TCP). False: порты веб-клиента не открываются"
+        default: false
+        required: false
+        type: bool
+
+      rustdesk_server_hbbs_nat_port:
+        description: "TCP-порт проверки NAT, слушается hbbs"
+        default: 21115
+        required: false
+        type: int
+
+      rustdesk_server_hbbs_port:
+        description: "TCP/UDP порт rendezvous/ID-сервера, слушается hbbs"
+        default: 21116
+        required: false
+        type: int
+
+      rustdesk_server_hbbr_port:
+        description: "TCP-порт relay-сервера, слушается hbbr"
+        default: 21117
+        required: false
+        type: int
+
+      rustdesk_server_hbbs_web_port:
+        description: "TCP-порт веб-клиента, слушается hbbs (при rustdesk_server_web_client_enable: true)"
+        default: 21118
+        required: false
+        type: int
+
+      rustdesk_server_hbbr_web_port:
+        description: "TCP-порт веб-клиента, слушается hbbr (при rustdesk_server_web_client_enable: true)"
+        default: 21119
+        required: false
+        type: int

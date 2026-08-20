@@ -1,0 +1,73 @@
+---
+
+role_name_check: 1
+
+driver:
+  name: docker
+
+platforms:
+  - name: rustdesk-debian12
+    image: geerlingguy/docker-debian12-ansible:latest
+    pre_build_image: true
+    privileged: true
+    cgroupns_mode: host
+    command: /lib/systemd/systemd
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    tmpfs:
+      - /run
+      - /run/lock
+    groups:
+      - rustdesk
+
+  - name: rustdesk-ubuntu2404
+    image: geerlingguy/docker-ubuntu2404-ansible:latest
+    pre_build_image: true
+    privileged: true
+    cgroupns_mode: host
+    command: /lib/systemd/systemd
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    tmpfs:
+      - /run
+      - /run/lock
+    groups:
+      - rustdesk
+
+provisioner:
+  name: ansible
+  config_options:
+    defaults:
+      interpreter_python: auto_silent
+      timeout: 60
+  env:
+    ANSIBLE_FORCE_COLOR: 1
+    ANSIBLE_ROLES_PATH: "../../../"
+    ANSIBLE_COLLECTIONS_PATH: "~/.ansible/collections"
+    ANSIBLE_DISPLAY_SKIPPED_HOSTS: "false"
+    ANSIBLE_VERBOSITY: 1
+  playbooks:
+    converge: ./playbooks/converge.yml
+    verify: ./playbooks/verify.yml
+
+dependency:
+  name: galaxy
+  enabled: true
+  options:
+    requirements-file: requirements.yml
+    verbose: true
+    ignore-errors: true
+    force: true
+
+verifier:
+  name: ansible
+
+scenario:
+  name: default
+  test_sequence:
+    - destroy
+    - create
+    - converge
+    - idempotence
+    - verify
+    - destroy

@@ -1,0 +1,76 @@
+---
+# =============================================================================
+#   Список задач: подключение задач роли
+# =============================================================================
+- name: "ROLE | BLOCK: include rustdesk_server role tasks"
+  when:
+    - rustdesk_server_role_enable is defined
+    - rustdesk_server_role_enable | bool
+    - inventory_hostname in rustdesk_server_role_hosts
+  block:
+
+    # Подключение задач для преднастройки хоста
+    - name: "ROLE | INCLUDE: task 'HOSTINIT'"
+      ansible.builtin.include_tasks: tasks_00_hostinit.yml
+      when: rustdesk_server_enable | bool
+      tags:
+        - hostinit
+        - rustdesk_server
+        - rustdesk_server_hostinit
+
+    # Подключение задач для обработки переменных
+    - name: "ROLE | INCLUDE: task 'PREINIT'"
+      ansible.builtin.include_tasks: tasks_01_preinit.yml
+      when: rustdesk_server_enable | bool
+      tags:
+        - preinit
+        - config
+        - rustdesk_server
+        - rustdesk_server_preinit
+        - rustdesk_server_config
+
+    # Подключение задач для установки
+    - name: "ROLE | INCLUDE: task 'INSTALL'"
+      ansible.builtin.include_tasks: tasks_02_install.yml
+      when: rustdesk_server_enable | bool
+      tags:
+        - install
+        - rustdesk_server
+        - rustdesk_server_install
+
+    # Подключение задач для настройки
+    - name: "ROLE | INCLUDE: task 'CONFIG'"
+      ansible.builtin.include_tasks: tasks_03_config.yml
+      when: rustdesk_server_enable | bool
+      tags:
+        - config
+        - rustdesk_server
+        - rustdesk_server_config
+
+    # Подключение задач проверки
+    - name: "ROLE | INCLUDE: task 'POSTINIT'"
+      ansible.builtin.include_tasks: tasks_06_postinit.yml
+      when: rustdesk_server_enable | bool
+      tags:
+        - postinit
+        - config
+        - rustdesk_server
+        - rustdesk_server_config
+
+    # Подключение задач вывода информации для клиентов
+    - name: "ROLE | INCLUDE: task 'INFO'"
+      ansible.builtin.include_tasks: tasks_07_info.yml
+      when: rustdesk_server_enable | bool
+      tags:
+        - info
+        - rustdesk_server
+        - rustdesk_server_info
+
+    # Подключение задач для удаления
+    - name: "ROLE | INCLUDE: task 'REMOVE'"
+      ansible.builtin.include_tasks: tasks_99_remove.yml
+      when: not rustdesk_server_enable | bool
+      tags:
+        - remove
+        - rustdesk_server
+        - rustdesk_server_remove

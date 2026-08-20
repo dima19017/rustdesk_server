@@ -1,0 +1,140 @@
+---
+# =============================================================================
+#   Переменные: роль
+# =============================================================================
+
+# title: Использование роли
+# required: True
+# description: True: переменные будут переданы в общий скоуп ролей и будут обработаны все задачи. False: переменные будут переданы в общий скоуп ролей, а задачи обработаны не будут
+rustdesk_server_role_enable: false
+
+# title: Обновление сервера
+# required: False
+# description: True: будет использована последняя стабильная версия с GitHub API и сервер будет обновлен до нее. False: будет использована версия из переменной rustdesk_server_version
+# description-lines: |
+#   Возможные варианты:
+#   - "true"  - всегда проверять и обновляться до последней версии с GitHub
+#   - "false" - использовать зафиксированную версию rustdesk_server_version
+rustdesk_server_role_update_enable: false
+
+# title: Отображение отладочной информации
+# required: False
+# description: True: вся отладочная и конфиденциальная информация будут отображаться в stdout. False: в stdout будет отображен только процесс выполнения роли
+rustdesk_server_role_debug_enable: "{{ ansible_check_mode }}"
+
+# title: Имена хостов для применения роли
+# required: False
+# description: Список хостов (или группа инвентаря), на которых будет выполнена роль
+rustdesk_server_role_hosts: "{{ ansible_play_hosts }}"
+
+# =============================================================================
+#   Переменные: установка / удаление сервиса
+# =============================================================================
+
+# title: Установка или удаление сервиса
+# required: False
+# description: True: сервис будет установлен и настроен. False: сервис будет удален
+rustdesk_server_enable: true
+
+# title: Версия RustDesk Server
+# required: False
+# description: Версия сервера, которая будет установлена при rustdesk_server_role_update_enable: false
+# description-lines: |
+#   Примеры:
+#   - "1.1.16"
+#   - "1.1.9"
+rustdesk_server_version: "1.1.16"
+
+# title: Публичный адрес сервера
+# required: False
+# description: Публичный IP-адрес или DNS-имя сервера, которые клиенты будут использовать для подключения к hbbs
+# description-lines: |
+#   По умолчанию используется ansible_host из инвентаря.
+#   Можно переопределить DNS-именем, например: rustdesk.example.com
+rustdesk_server_public_host: "{{ ansible_host }}"
+
+# title: Адрес relay-сервера
+# required: False
+# description: Публичный IP-адрес или DNS-имя relay-сервера (hbbr), который будет передан клиентам через hbbs
+# description-lines: |
+#   По умолчанию совпадает с rustdesk_server_public_host (hbbs и hbbr на одном хосте).
+#   Если hbbr развернут на отдельном хосте - укажите его адрес.
+rustdesk_server_relay_host: "{{ rustdesk_server_public_host }}"
+
+# title: Ключ сервера (predefined)
+# required: False
+# description: Предзаданный ключ сервера (base64 публичный ключ). Если пусто - сервер сгенерирует ключи сам при первом запуске
+# description-lines: |
+#   Используется, чтобы сохранить идентичность сервера при переустановке.
+#   Обычно не требуется - достаточно оставить пустым.
+rustdesk_server_key: ""
+
+# title: Пользователь сервиса
+# required: False
+# description: Системный пользователь, от имени которого будут запускаться сервисы hbbs и hbbr
+rustdesk_server_user: "rustdesk"
+
+# title: Управление межсетевым экраном
+# required: False
+# description: True: роль добавит правила UFW для портов RustDesk. False: правила межсетевого экрана не изменяются
+rustdesk_server_firewall_enable: true
+
+# title: Веб-клиент
+# required: False
+# description: True: будут открыты порты веб-клиента (21118/21119 TCP). False: порты веб-клиента не открываются
+# description-lines: |
+#   Веб-клиент позволяет подключаться к серверу через браузер.
+#   Обычно не требуется, если используются нативные клиенты.
+rustdesk_server_web_client_enable: false
+
+# =============================================================================
+#   Переменные: порты
+# =============================================================================
+
+# title: Порт проверки NAT (hbbs)
+# required: False
+# description: TCP-порт проверки типа NAT, слушается hbbs
+rustdesk_server_hbbs_nat_port: 21115
+
+# title: Порт rendezvous/ID-сервера (hbbs)
+# required: False
+# description: TCP/UDP порт регистрации и поддержания связи клиентов, слушается hbbs
+rustdesk_server_hbbs_port: 21116
+
+# title: Порт relay-сервера (hbbr)
+# required: False
+# description: TCP-порт ретрансляции трафика, слушается hbbr
+rustdesk_server_hbbr_port: 21117
+
+# title: Порт веб-клиента hbbs
+# required: False
+# description: TCP-порт веб-клиента, слушается hbbs. Используется только при rustdesk_server_web_client_enable: true
+rustdesk_server_hbbs_web_port: 21118
+
+# title: Порт веб-клиента hbbr
+# required: False
+# description: TCP-порт веб-клиента, слушается hbbr. Используется только при rustdesk_server_web_client_enable: true
+rustdesk_server_hbbr_web_port: 21119
+
+# =============================================================================
+#   Переменные: порты для межсетевого экрана (вычисляются автоматически)
+# =============================================================================
+
+# title: Список TCP-портов для UFW
+# required: False
+# description: TCP-порты, которые будут открыты в UFW. Включает порты hbbs/hbbr и порты веб-клиента при rustdesk_server_web_client_enable: true
+# description-lines: |
+#   Список формируется автоматически из переменных портов и не требует ручного заполнения.
+rustdesk_server_firewall_tcp_ports: >-
+  {{
+  [rustdesk_server_hbbs_nat_port, rustdesk_server_hbbs_port, rustdesk_server_hbbr_port]
+  + ([rustdesk_server_hbbs_web_port, rustdesk_server_hbbr_web_port] if rustdesk_server_web_client_enable | bool else [])
+  }}
+
+# title: Список UDP-портов для UFW
+# required: False
+# description: UDP-порты, которые будут открыты в UFW (порт rendezvous hbbs)
+# description-lines: |
+#   Список формируется автоматически из переменных портов и не требует ручного заполнения.
+rustdesk_server_firewall_udp_ports:
+  - "{{ rustdesk_server_hbbs_port }}"

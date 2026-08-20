@@ -1,0 +1,62 @@
+---
+# =============================================================================
+#   Список задач: конфигурация сервисов и межсетевого экрана
+# =============================================================================
+- name: "CONFIG | BLOCK: deploy systemd units and firewall rules"
+  ignore_errors: "{{ ansible_check_mode }}"
+  tags:
+    - config
+    - rustdesk_server
+    - rustdesk_server_config
+  block:
+
+    - name: "CONFIG | TEMPLATE: deploy hbbs systemd unit"
+      ansible.builtin.template:
+        src: hbbs.service.j2
+        dest: "/etc/systemd/system/{{ rustdesk_server_service_hbbs }}.service"
+        owner: root
+        group: root
+        mode: "u=rwX,g=rX,o=rX"
+      notify: Restart rustdesk services
+
+    - name: "CONFIG | TEMPLATE: deploy hbbr systemd unit"
+      ansible.builtin.template:
+        src: hbbr.service.j2
+        dest: "/etc/systemd/system/{{ rustdesk_server_service_hbbr }}.service"
+        owner: root
+        group: root
+        mode: "u=rwX,g=rX,o=rX"
+      notify: Restart rustdesk services
+
+    - name: "CONFIG | SYSTEMD: reload daemon and enable services"
+      ansible.builtin.systemd:
+        daemon_reload: true
+      notify: Restart rustdesk services
+
+    - name: "CONFIG | SYSTEMD: ensure hbbs is enabled and started"
+      ansible.builtin.systemd:
+        name: "{{ rustdesk_server_service_hbbs }}"
+        enabled: true
+        state: started
+
+    - name: "CONFIG | SYSTEMD: ensure hbbr is enabled and started"
+      ansible.builtin.systemd:
+        name: "{{ rustdesk_server_service_hbbr }}"
+        enabled: true
+        state: started
+
+    - name: "CONFIG | UFW: allow TCP ports"
+      community.general.ufw:
+        rule: allow
+        port: "{{ item }}"
+        proto: tcp
+      loop: "{{ rustdesk_server_firewall_tcp_ports }}"
+      when: rustdesk_server_firewall_enable | bool
+
+    - name: "CONFIG | UFW: allow UDP ports"
+      community.general.ufw:
+        rule: allow
+        port: "{{ item }}"
+        proto: udp
+      loop: "{{ rustdesk_server_firewall_udp_ports }}"
+      when: rustdesk_server_firewall_enable | bool

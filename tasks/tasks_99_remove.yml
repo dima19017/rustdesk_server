@@ -1,0 +1,79 @@
+---
+# =============================================================================
+#   Список задач: удаление сервиса
+# =============================================================================
+- name: "REMOVE | BLOCK: remove RustDesk Server"
+  ignore_errors: "{{ ansible_check_mode }}"
+  tags:
+    - remove
+    - rustdesk_server
+    - rustdesk_server_remove
+  block:
+
+    - name: "REMOVE | SYSTEMD: stop and disable hbbs service"
+      ansible.builtin.systemd:
+        name: "{{ rustdesk_server_service_hbbs }}"
+        state: stopped
+        enabled: false
+      failed_when: false
+
+    - name: "REMOVE | SYSTEMD: stop and disable hbbr service"
+      ansible.builtin.systemd:
+        name: "{{ rustdesk_server_service_hbbr }}"
+        state: stopped
+        enabled: false
+      failed_when: false
+
+    - name: "REMOVE | FILE: remove systemd units"
+      ansible.builtin.file:
+        path: "/etc/systemd/system/{{ item }}.service"
+        state: absent
+      loop:
+        - "{{ rustdesk_server_service_hbbs }}"
+        - "{{ rustdesk_server_service_hbbr }}"
+
+    - name: "REMOVE | SYSTEMD: reload daemon"
+      ansible.builtin.systemd:
+        daemon_reload: true
+
+    - name: "REMOVE | FILE: remove binaries"
+      ansible.builtin.file:
+        path: "{{ rustdesk_server_install_dir }}/{{ item }}"
+        state: absent
+      loop: "{{ rustdesk_server_binaries }}"
+
+    - name: "REMOVE | FILE: remove version marker"
+      ansible.builtin.file:
+        path: "{{ rustdesk_server_version_file }}"
+        state: absent
+
+    - name: "REMOVE | FILE: remove data directory"
+      ansible.builtin.file:
+        path: "{{ rustdesk_server_data_dir }}"
+        state: absent
+
+    - name: "REMOVE | FILE: remove log directory"
+      ansible.builtin.file:
+        path: "{{ rustdesk_server_log_dir }}"
+        state: absent
+
+    - name: "REMOVE | USER: remove rustdesk system user"
+      ansible.builtin.user:
+        name: "{{ rustdesk_server_user }}"
+        state: absent
+
+    - name: "REMOVE | UFW: remove TCP port rules"
+      community.general.ufw:
+        rule: delete
+        port: "{{ item }}"
+        proto: tcp
+      loop: "{{ rustdesk_server_firewall_tcp_ports }}"
+      when: rustdesk_server_firewall_enable | bool
+
+    - name: "REMOVE | UFW: remove UDP port rules"
+      community.general.ufw:
+        rule: delete
+        port: "{{ item }}"
+        proto: udp
+      loop: "{{ rustdesk_server_firewall_udp_ports }}"
+      when: rustdesk_server_firewall_enable | bool

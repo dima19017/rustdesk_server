@@ -1,0 +1,13 @@
+---
+# =============================================================================
+#   Список обработчиков: перезапуск сервисов RustDesk
+# =============================================================================
+- name: "HANDLER | SYSTEMD: restart rustdesk services"
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: restarted
+    daemon_reload: true
+  loop:
+    - "{{ rustdesk_server_service_hbbs }}"
+    - "{{ rustdesk_server_service_hbbr }}"
+  listen: "Restart rustdesk services"

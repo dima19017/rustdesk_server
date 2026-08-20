@@ -1,0 +1,17 @@
+[Unit]
+Description=RustDesk relay server (hbbr)
+After=network.target network-online.target hbbs.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User={{ rustdesk_server_user }}
+Group={{ rustdesk_server_user }}
+WorkingDirectory={{ rustdesk_server_data_dir }}
+ExecStart={{ rustdesk_server_install_dir }}/hbbr{% if rustdesk_server_key %} -k {{ rustdesk_server_key }}{% else %} -k _{% endif %}
+Restart=always
+RestartSec=5
+LimitNOFILE=1048576
+
+[Install]
+WantedBy=multi-user.target

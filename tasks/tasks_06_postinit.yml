@@ -1,0 +1,77 @@
+---
+# =============================================================================
+#   Список задач: проверка после установки и вывод параметров подключения
+# =============================================================================
+- name: "POSTINIT | BLOCK: verify services and collect client parameters"
+  ignore_errors: "{{ ansible_check_mode }}"
+  tags:
+    - postinit
+    - config
+    - rustdesk_server
+    - rustdesk_server_config
+  block:
+
+    - name: "POSTINIT | WAIT_FOR: hbbs port is listening"
+      ansible.builtin.wait_for:
+        port: "{{ rustdesk_server_hbbs_port }}"
+        timeout: 30
+      when: not ansible_check_mode
+
+    - name: "POSTINIT | WAIT_FOR: hbbr port is listening"
+      ansible.builtin.wait_for:
+        port: "{{ rustdesk_server_hbbr_port }}"
+        timeout: 30
+      when: not ansible_check_mode
+
+    - name: "POSTINIT | SYSTEMD: check hbbs service status"
+      ansible.builtin.systemd:
+        name: "{{ rustdesk_server_service_hbbs }}"
+      register: _rustdesk_server_hbbs_status
+
+    - name: "POSTINIT | SYSTEMD: check hbbr service status"
+      ansible.builtin.systemd:
+        name: "{{ rustdesk_server_service_hbbr }}"
+      register: _rustdesk_server_hbbr_status
+
+    - name: "POSTINIT | ASSERT: hbbs is active"
+      ansible.builtin.assert:
+        that:
+          - _rustdesk_server_hbbs_status.status.ActiveState == "active"
+        fail_msg: "hbbs service is not active. Check: systemctl status {{ rustdesk_server_service_hbbs }}"
+
+    - name: "POSTINIT | ASSERT: hbbr is active"
+      ansible.builtin.assert:
+        that:
+          - _rustdesk_server_hbbr_status.status.ActiveState == "active"
+        fail_msg: "hbbr service is not active. Check: systemctl status {{ rustdesk_server_service_hbbr }}"
+
+    - name: "POSTINIT | SLURP: read public key file"
+      ansible.builtin.slurp:
+        src: "{{ rustdesk_server_data_dir }}/id_ed25519.pub"
+      register: _rustdesk_server_pubkey_slurp
+      when: not ansible_check_mode
+
+    - name: "POSTINIT | SET_FACT: public key"
+      ansible.builtin.set_fact:
+        _rustdesk_server_public_key: >-
+          {{
+          (_rustdesk_server_pubkey_slurp.content | default('') | b64decode | trim)
+          if _rustdesk_server_pubkey_slurp is defined and _rustdesk_server_pubkey_slurp.content is defined
+          else ''
+          }}
+
+    - name: "POSTINIT | DEBUG: client connection parameters"
+      ansible.builtin.debug:
+        msg:
+          - "======================================================"
+          - "RustDesk Server ready! Client connection parameters:"
+          - "------------------------------------------------------"
+          - "ID/Relay server (hbbs): {{ rustdesk_server_public_host }}:{{ rustdesk_server_hbbs_port }}"
+          - "Relay server (hbbr):    {{ rustdesk_server_relay_host }}:{{ rustdesk_server_hbbr_port }}"
+          - "Public key:             {{ _rustdesk_server_public_key }}"
+          - "------------------------------------------------------"
+          - "Client setup:"
+          - "  RustDesk -> Settings -> Network:"
+          - "    ID/Relay Server: {{ rustdesk_server_public_host }}"
+          - "    Key: {{ _rustdesk_server_public_key }}"
+          - "======================================================"

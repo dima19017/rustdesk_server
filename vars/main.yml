@@ -1,0 +1,66 @@
+---
+# =============================================================================
+#   Переменные: константы роли (не переопределять)
+# =============================================================================
+
+# title: Каталог установки бинарников
+# required: False
+# description: Каталог, куда будут установлены бинарники hbbs, hbbr, rustdesk-utils
+rustdesk_server_install_dir: "/usr/local/bin"
+
+# title: Каталог данных
+# required: False
+# description: Рабочий каталог сервера: здесь hbbs хранит ключи id_ed25519 и id_ed25519.pub
+rustdesk_server_data_dir: "/var/lib/rustdesk-server"
+
+# title: Каталог логов
+# required: False
+# description: Каталог для логов сервиса (используется в systemd-юнитах)
+rustdesk_server_log_dir: "/var/log/rustdesk-server"
+
+# title: Файл маркера установленной версии
+# required: False
+# description: Файл, в который записывается установленная версия сервера для проверки обновлений
+rustdesk_server_version_file: "/etc/rustdesk-server-version"
+
+# title: Имя сервиса hbbs
+# required: False
+# description: Имя systemd-юнита для rendezvous/ID сервера
+rustdesk_server_service_hbbs: "hbbs"
+
+# title: Имя сервиса hbbr
+# required: False
+# description: Имя systemd-юнита для relay-сервера
+rustdesk_server_service_hbbr: "hbbr"
+
+# title: Бинарники RustDesk
+# required: False
+# description: Список бинарников, которые поставляются в архиве rustdesk-server
+rustdesk_server_binaries:
+  - "hbbs"
+  - "hbbr"
+  - "rustdesk-utils"
+
+# title: Маппинг архитектуры
+# required: False
+# description: Соответствие ansible_architecture суффиксу имени архива на GitHub releases
+# description-lines: |
+#   Каждый элемент словаря:
+#   - ключ: ansible_architecture
+#   - значение: суффикс в имени файла rustdesk-server-linux-<suffix>.zip
+rustdesk_server_arch_map:
+  x86_64: "amd64"
+  amd64: "amd64"
+  aarch64: "arm64v8"
+  arm64: "arm64v8"
+  armv7l: "armv7"
+
+# title: Базовый URL загрузки
+# required: False
+# description: Базовая ссылка на релизы RustDesk Server на GitHub
+rustdesk_server_download_base: "https://github.com/rustdesk/rustdesk-server/releases/download"
+
+# title: URL API последней версии
+# required: False
+# description: Ссылка на API GitHub для определения последней стабильной версии
+rustdesk_server_github_api_latest: "https://api.github.com/repos/rustdesk/rustdesk-server/releases/latest"

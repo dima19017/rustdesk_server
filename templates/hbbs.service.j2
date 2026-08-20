@@ -1,0 +1,17 @@
+[Unit]
+Description=RustDesk ID/rendezvous server (hbbs)
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User={{ rustdesk_server_user }}
+Group={{ rustdesk_server_user }}
+WorkingDirectory={{ rustdesk_server_data_dir }}
+ExecStart={{ rustdesk_server_install_dir }}/hbbs -r {{ rustdesk_server_relay_host }}{% if rustdesk_server_key %} -k {{ rustdesk_server_key }}{% endif %}
+Restart=always
+RestartSec=5
+LimitNOFILE=1048576
+
+[Install]
+WantedBy=multi-user.target

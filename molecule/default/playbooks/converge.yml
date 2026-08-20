@@ -1,0 +1,14 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+  vars:
+    rustdesk_server_role_enable: true
+    rustdesk_server_enable: true
+    rustdesk_server_firewall_enable: false
+    rustdesk_server_public_host: "rustdesk.example.com"
+    rustdesk_server_relay_host: "rustdesk.example.com"
+  tasks:
+    - name: "Include rustdesk_server role"
+      ansible.builtin.include_role:
+        name: rustdesk_server

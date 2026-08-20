@@ -1,0 +1,45 @@
+---
+# =============================================================================
+#   Список задач: вывод параметров подключения для клиента
+#   Запуск только этого блока:
+#     ansible-playbook ... --tags rustdesk_server_info
+# =============================================================================
+- name: "INFO | BLOCK: collect and print client connection parameters"
+  ignore_errors: "{{ ansible_check_mode }}"
+  tags:
+    - info
+    - rustdesk_server
+    - rustdesk_server_info
+  block:
+
+    - name: "INFO | SLURP: read public key file"
+      ansible.builtin.slurp:
+        src: "{{ rustdesk_server_data_dir }}/id_ed25519.pub"
+      register: _rustdesk_server_pubkey_slurp
+      failed_when: false
+
+    - name: "INFO | SET_FACT: public key"
+      ansible.builtin.set_fact:
+        _rustdesk_server_public_key: >-
+          {{
+          (_rustdesk_server_pubkey_slurp.content | default('') | b64decode | trim)
+          if _rustdesk_server_pubkey_slurp is defined and _rustdesk_server_pubkey_slurp.content is defined
+          else ''
+          }}
+
+    - name: "INFO | DEBUG: client connection parameters"
+      ansible.builtin.debug:
+        msg:
+          - "======================================================"
+          - "RustDesk Server client connection parameters"
+          - "------------------------------------------------------"
+          - "ID/Relay server (hbbs): {{ rustdesk_server_public_host }}:{{ rustdesk_server_hbbs_port }}"
+          - "Relay server (hbbr):    {{ rustdesk_server_relay_host }}:{{ rustdesk_server_hbbr_port }}"
+          - "Public key:             {{ _rustdesk_server_public_key }}"
+          - "------------------------------------------------------"
+          - "Client setup:"
+          - "  RustDesk -> Settings -> Network:"
+          - "    ID/Relay Server: {{ rustdesk_server_public_host }}"
+          - "    Key: {{ _rustdesk_server_public_key }}"
+          - "  (Key будет пустым, если сервер ещё не запущен или не установлен)"
+          - "======================================================"

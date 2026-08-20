@@ -1,0 +1,64 @@
+---
+# =============================================================================
+#   Список задач: преднастройка хоста
+# =============================================================================
+- name: "HOSTINIT | BLOCK: check OS and prepare system"
+  ignore_errors: "{{ ansible_check_mode }}"
+  tags:
+    - hostinit
+    - rustdesk_server
+    - rustdesk_server_hostinit
+  block:
+
+    - name: "HOSTINIT | ASSERT: supported OS family"
+      ansible.builtin.assert:
+        that:
+          - ansible_os_family == "Debian"
+        fail_msg: >-
+          Role rustdesk_server supports Debian/Ubuntu only.
+          Detected OS: {{ ansible_distribution }} {{ ansible_distribution_version }} (family: {{ ansible_os_family }})
+
+    - name: "HOSTINIT | ASSERT: supported distribution"
+      ansible.builtin.assert:
+        that:
+          - ansible_distribution in ["Debian", "Ubuntu"]
+        fail_msg: >-
+          Role rustdesk_server supports Debian/Ubuntu only.
+          Detected OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
+
+    - name: "HOSTINIT | APT: install unzip for archive extraction"
+      ansible.builtin.apt:
+        name: unzip
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: "HOSTINIT | USER: create rustdesk system user"
+      ansible.builtin.user:
+        name: "{{ rustdesk_server_user }}"
+        system: true
+        shell: /usr/sbin/nologin
+        create_home: false
+        state: present
+
+    - name: "HOSTINIT | FILE: create data directory"
+      ansible.builtin.file:
+        path: "{{ rustdesk_server_data_dir }}"
+        state: directory
+        owner: "{{ rustdesk_server_user }}"
+        group: "{{ rustdesk_server_user }}"
+        mode: "u=rwX,g=rX,o=rX"
+
+    - name: "HOSTINIT | FILE: create log directory"
+      ansible.builtin.file:
+        path: "{{ rustdesk_server_log_dir }}"
+        state: directory
+        owner: "{{ rustdesk_server_user }}"
+        group: "{{ rustdesk_server_user }}"
+        mode: "u=rwX,g=rX,o=rX"
+
+    - name: "HOSTINIT | APT: install ufw when firewall enabled"
+      ansible.builtin.apt:
+        name: ufw
+        state: present
+      when: rustdesk_server_firewall_enable | bool

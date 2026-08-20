@@ -1,0 +1,60 @@
+---
+# =============================================================================
+#   Список задач: установка бинарников
+# =============================================================================
+- name: "INSTALL | BLOCK: download and install RustDesk Server binaries"
+  ignore_errors: "{{ ansible_check_mode }}"
+  when: _rustdesk_server_need_install | bool
+  tags:
+    - install
+    - rustdesk_server
+    - rustdesk_server_install
+  block:
+
+    - name: "INSTALL | GET_URL: download RustDesk Server archive"
+      ansible.builtin.get_url:
+        url: "{{ _rustdesk_server_download_url }}"
+        dest: "/tmp/rustdesk-server-{{ _rustdesk_server_version }}.zip"
+        mode: "u=rwX,g=rX,o=rX"
+        timeout: 120
+
+    - name: "INSTALL | FILE: create temporary extraction directory"
+      ansible.builtin.file:
+        path: "/tmp/rustdesk-server-{{ _rustdesk_server_version }}"
+        state: directory
+        mode: "u=rwX,g=rX,o=rX"
+
+    - name: "INSTALL | UNARCHIVE: extract archive to temporary directory"
+      ansible.builtin.unarchive:
+        src: "/tmp/rustdesk-server-{{ _rustdesk_server_version }}.zip"
+        dest: "/tmp/rustdesk-server-{{ _rustdesk_server_version }}"
+        remote_src: true
+        owner: root
+        group: root
+        mode: "u=rwX,g=rX,o=rX"
+
+    - name: "INSTALL | COPY: install binaries to install dir"
+      ansible.builtin.copy:
+        src: "/tmp/rustdesk-server-{{ _rustdesk_server_version }}/{{ _rustdesk_server_arch }}/{{ item }}"
+        dest: "{{ rustdesk_server_install_dir }}/{{ item }}"
+        remote_src: true
+        owner: root
+        group: root
+        mode: "u=rwx,g=rx,o=rx"
+      loop: "{{ rustdesk_server_binaries }}"
+
+    - name: "INSTALL | COPY: write installed version marker"
+      ansible.builtin.copy:
+        dest: "{{ rustdesk_server_version_file }}"
+        content: "{{ _rustdesk_server_version }}\n"
+        owner: root
+        group: root
+        mode: "u=rwX,g=rX,o=rX"
+
+    - name: "INSTALL | FILE: remove temporary directory and archive"
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "/tmp/rustdesk-server-{{ _rustdesk_server_version }}.zip"
+        - "/tmp/rustdesk-server-{{ _rustdesk_server_version }}"
