@@ -62,6 +62,12 @@ argument_specs:
         required: false
         type: str
 
+      rustdesk_server_client_version:
+        description: "Версия настольного клиента RustDesk, ссылка на скачивание которой выводится в параметрах подключения"
+        default: "1.4.9"
+        required: false
+        type: str
+
       rustdesk_server_user:
         description: "Системный пользователь, от имени которого запускаются сервисы hbbs и hbbr"
         default: "rustdesk"

@@ -69,6 +69,16 @@ rustdesk_server_relay_host: "{{ rustdesk_server_public_host }}"
 #   Обычно не требуется - достаточно оставить пустым.
 rustdesk_server_key: ""
 
+# title: Версия клиента RustDesk
+# required: False
+# description: Версия настольного клиента RustDesk, ссылка на скачивание которой выводится в параметрах подключения
+# description-lines: |
+#   Примеры:
+#   - "1.4.9"
+#   - "1.3.8"
+#   Актуальную версию клиента смотрите на: https://github.com/rustdesk/rustdesk/releases
+rustdesk_server_client_version: "1.4.9"
+
 # title: Пользователь сервиса
 # required: False
 # description: Системный пользователь, от имени которого будут запускаться сервисы hbbs и hbbr
